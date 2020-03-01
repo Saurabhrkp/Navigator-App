@@ -12,7 +12,7 @@ import {
   NativeEventEmitter,
   NativeModules,
 } from 'react-native';
-import BleManager from 'react-native-ble-manager';
+import {BleManager} from 'react-native-ble-plx';
 
 import NumberContainer from '../components/NumberContainer';
 import Card from '../components/Card';
@@ -22,13 +22,9 @@ import DefaultStyles from '../constants/default-styles';
 import TitleText from '../components/TitleText';
 
 const SetupScreen = props => {
-  const BleManagerModule = NativeModules.BleManager;
-  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-
   const [status, setStatus] = useState(false);
-  const [peripherals, setPeripherals] = useState(new Map());
 
-  BleManager.start({showAlert: false});
+  const manager = new BleManager();
 
   if (Platform.OS === 'android' && Platform.Version >= 23) {
     PermissionsAndroid.check(
@@ -50,39 +46,69 @@ const SetupScreen = props => {
     });
   }
 
-  bleManagerEmitter.addListener(
-    'BleManagerDiscoverPeripheral',
-    handleDiscoverPeripheral,
-  );
+  const subscription = manager.onStateChange(state => {
+    if (state === 'PoweredOn') {
+      subscription.remove();
+    }
+  }, true);
 
   const startScanHandler = () => {
-    if (!status) {
-      console.log(status);
-      BleManager.scan([], 30000, true).then(results => {
-        console.log('Scanning...');
-        setStatus(true);
-      });
-    }
+    let LowLatency = 2;
+    let ScanOptions = {scanMode: LowLatency};
+    console.log('Started Scanning');
+    manager.startDeviceScan(null, ScanOptions, (error, device) => {
+      if (error) {
+        // Handle error (scanning will be stopped automatically)
+        return;
+      }
+
+      /**
+       ** Formula to calculate distance of BLE devices using there RSSI value and there average RSSI value at one metre
+       */
+      function getRange(txCalibratedPower, rssi) {
+        var ratio_db = txCalibratedPower - rssi;
+        var ratio_linear = Math.pow(10, ratio_db / 10);
+        var range = Math.sqrt(ratio_linear);
+        return range;
+      }
+
+      /**
+       *? TxPowerLevel(RSSI value) of each BLE Device at one metre distance
+       * TODO: Measure actual value before use.
+       */
+      var txPower = -70;
+      const range = getRange(txPower, device.rssi);
+      console.log(
+        `${device.name}       ${device.rssi}        ${device.id}      ${range}`,
+      );
+      setStatus(true);
+    });
   };
-  const handleDiscoverPeripheral = peripheral => {
-    peripherals;
-    console.log('Got ble peripheral', peripheral);
-    if (!peripheral.name) {
-      peripheral.name = 'NO NAME';
-    }
-    peripherals.set(peripheral.id, peripheral);
-    setPeripherals({peripherals});
+
+  const stopScanHandler = () => {
+    manager.stopDeviceScan();
+    console.log('Stopped Scanning');
+    setStatus(false);
   };
 
   return (
     <View style={styles.screen}>
       <Text style={DefaultStyles.title}>Setup Bluetooth Device Config.</Text>
-      <MainButton
-        onPress={() => {
-          startScanHandler();
-        }}>
-        Start Scanning
-      </MainButton>
+      {status ? (
+        <MainButton
+          onPress={() => {
+            stopScanHandler();
+          }}>
+          Stop Scanning
+        </MainButton>
+      ) : (
+        <MainButton
+          onPress={() => {
+            startScanHandler();
+          }}>
+          Start Scanning
+        </MainButton>
+      )}
     </View>
   );
 };
