@@ -6,8 +6,13 @@ import {
   Alert,
   ScrollView,
   FlatList,
+  Platform,
+  PermissionsAndroid,
   Dimensions,
+  NativeEventEmitter,
+  NativeModules,
 } from 'react-native';
+import BleManager from 'react-native-ble-manager';
 
 import NumberContainer from '../components/NumberContainer';
 import Card from '../components/Card';
@@ -17,41 +22,67 @@ import DefaultStyles from '../constants/default-styles';
 import TitleText from '../components/TitleText';
 
 const SetupScreen = props => {
-  const [availableDeviceWidth, setAvailableDeviceWidth] = useState(
-    Dimensions.get('window').width,
-  );
-  const [availableDeviceHeight, setAvailableDeviceHeight] = useState(
-    Dimensions.get('window').height,
-  );
+  const BleManagerModule = NativeModules.BleManager;
+  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
-  useEffect(() => {
-    const updateLayout = () => {
-      setAvailableDeviceWidth(Dimensions.get('window').width);
-      setAvailableDeviceHeight(Dimensions.get('window').height);
-    };
+  const [status, setStatus] = useState(false);
+  const [peripherals, setPeripherals] = useState(new Map());
 
-    Dimensions.addEventListener('change', updateLayout);
+  BleManager.start({showAlert: false});
 
-    return () => {
-      Dimensions.removeEventListener('change', updateLayout);
-    };
-  });
-
-  if (availableDeviceWidth < 350) {
-    listContainerStyle = styles.listContainerBig;
+  if (Platform.OS === 'android' && Platform.Version >= 23) {
+    PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+    ).then(result => {
+      if (result) {
+        console.log('Permission is OK');
+      } else {
+        PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+        ).then(result => {
+          if (result) {
+            console.log('User accept');
+          } else {
+            console.log('User refuse');
+          }
+        });
+      }
+    });
   }
 
-  if (availableDeviceHeight < 500) {
-    return (
-      <View style={styles.screen}>
-        <Text style={DefaultStyles.title}>Setup Bluetooth Device Config.</Text>
-      </View>
-    );
-  }
+  bleManagerEmitter.addListener(
+    'BleManagerDiscoverPeripheral',
+    handleDiscoverPeripheral,
+  );
+
+  const startScanHandler = () => {
+    if (!status) {
+      console.log(status);
+      BleManager.scan([], 30000, true).then(results => {
+        console.log('Scanning...');
+        setStatus(true);
+      });
+    }
+  };
+  const handleDiscoverPeripheral = peripheral => {
+    peripherals;
+    console.log('Got ble peripheral', peripheral);
+    if (!peripheral.name) {
+      peripheral.name = 'NO NAME';
+    }
+    peripherals.set(peripheral.id, peripheral);
+    setPeripherals({peripherals});
+  };
 
   return (
     <View style={styles.screen}>
       <Text style={DefaultStyles.title}>Setup Bluetooth Device Config.</Text>
+      <MainButton
+        onPress={() => {
+          startScanHandler();
+        }}>
+        Start Scanning
+      </MainButton>
     </View>
   );
 };

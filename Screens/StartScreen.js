@@ -6,22 +6,7 @@ import BodyText from '../components/BodyText';
 import TitleText from '../components/TitleText';
 import MainButton from '../components/MainButton.android';
 
-const StartGameScreen = props => {
-  const [buttonWidth, setButtonWidth] = useState(
-    Dimensions.get('window').width / 2,
-  );
-
-  useEffect(() => {
-    const updateLayout = () => {
-      setButtonWidth(Dimensions.get('window').width / 4);
-    };
-
-    Dimensions.addEventListener('change', updateLayout);
-    return () => {
-      Dimensions.removeEventListener('change', updateLayout);
-    };
-  });
-
+const StartScreen = props => {
   return (
     <ScrollView>
       <View style={styles.screen}>
@@ -86,4 +71,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StartGameScreen;
+export default StartScreen;
