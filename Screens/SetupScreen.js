@@ -20,37 +20,40 @@ import MainButton from '../components/MainButton';
 import BodyText from '../components/BodyText';
 import DefaultStyles from '../constants/default-styles';
 import TitleText from '../components/TitleText';
+import Color from '../constants/colors';
 
 const SetupScreen = props => {
   const [status, setStatus] = useState(false);
 
   const manager = new BleManager();
 
-  if (Platform.OS === 'android' && Platform.Version >= 23) {
-    PermissionsAndroid.check(
-      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-    ).then(result => {
-      if (result) {
-        console.log('Permission is OK');
-      } else {
-        PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-        ).then(result => {
-          if (result) {
-            console.log('User accept');
-          } else {
-            console.log('User refuse');
-          }
-        });
-      }
-    });
-  }
-
-  const subscription = manager.onStateChange(state => {
-    if (state === 'PoweredOn') {
-      subscription.remove();
+  useEffect(() => {
+    if (Platform.OS === 'android' && Platform.Version >= 23) {
+      PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+      ).then(result => {
+        if (result) {
+          console.log('Permission is OK');
+        } else {
+          PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+          ).then(result => {
+            if (result) {
+              console.log('User accept');
+            } else {
+              console.log('User refuse');
+            }
+          });
+        }
+      });
     }
-  }, true);
+
+    const subscription = manager.onStateChange(state => {
+      if (state === 'PoweredOn') {
+        subscription.remove();
+      }
+    }, true);
+  });
 
   const startScanHandler = () => {
     let LowLatency = 2;
@@ -95,22 +98,20 @@ const SetupScreen = props => {
     <View style={styles.screen}>
       <Text style={DefaultStyles.title}>Setup Bluetooth Device Config.</Text>
       {status ? (
-        <MainButton
-          onPress={() => {
-            stopScanHandler();
-          }}>
-          Stop Scanning
-        </MainButton>
+        <MainButton onPress={stopScanHandler}>Stop Scanning</MainButton>
       ) : (
-        <MainButton
-          onPress={() => {
-            startScanHandler();
-          }}>
-          Start Scanning
-        </MainButton>
+        <MainButton onPress={startScanHandler}>Start Scanning</MainButton>
       )}
     </View>
   );
+};
+
+SetupScreen.navigationOptions = {
+  headerTitle: 'Setup Bluetooth Device Config.',
+  headerStyle: {
+    backgroundColor: Color.accent,
+  },
+  headerTintColor: 'white',
 };
 
 const styles = StyleSheet.create({
