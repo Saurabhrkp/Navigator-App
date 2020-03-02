@@ -13,6 +13,7 @@ import {
   NativeModules,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
+import * as util from 'util';
 
 import NumberContainer from '../components/NumberContainer';
 import Card from '../components/Card';
@@ -24,6 +25,7 @@ import Color from '../constants/colors';
 
 const SetupScreen = props => {
   const [status, setStatus] = useState(false);
+  const [devices, setNewDevice] = useState([]);
 
   const manager = new BleManager();
 
@@ -47,18 +49,19 @@ const SetupScreen = props => {
         }
       });
     }
+  }, []);
 
-    const subscription = manager.onStateChange(state => {
-      if (state === 'PoweredOn') {
-        subscription.remove();
-      }
-    }, true);
-  });
+  const subscription = manager.onStateChange(state => {
+    if (state === 'PoweredOn') {
+      subscription.remove();
+    }
+  }, true);
 
   const startScanHandler = () => {
     let LowLatency = 2;
     let ScanOptions = {scanMode: LowLatency};
     console.log('Started Scanning');
+    setStatus(true);
     manager.startDeviceScan(null, ScanOptions, (error, device) => {
       if (error) {
         // Handle error (scanning will be stopped automatically)
@@ -81,10 +84,18 @@ const SetupScreen = props => {
        */
       var txPower = -70;
       const range = getRange(txPower, device.rssi);
-      console.log(
-        `${device.name}       ${device.rssi}        ${device.id}      ${range}`,
+      const existingIndex = devices.findIndex(
+        devices => devices.id === device.id,
       );
-      setStatus(true);
+      if (existingIndex >= 0) {
+        console.log(
+          `${device.name}       ${device.rssi}        ${device.id}      ${range}`,
+        );
+      } else {
+        const {id, name, txPowerLevel, localName} = device;
+        Device = {id, name, txPowerLevel, localName};
+        setNewDevice(devices => [...devices, devices.push(Device)]);
+      }
     });
   };
 
@@ -104,14 +115,6 @@ const SetupScreen = props => {
       )}
     </View>
   );
-};
-
-SetupScreen.navigationOptions = {
-  headerTitle: 'Setup Bluetooth Device Config.',
-  headerStyle: {
-    backgroundColor: Color.accent,
-  },
-  headerTintColor: 'white',
 };
 
 const styles = StyleSheet.create({
