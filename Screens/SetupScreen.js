@@ -3,28 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
-  ScrollView,
   FlatList,
   Platform,
   PermissionsAndroid,
-  Dimensions,
-  NativeEventEmitter,
-  NativeModules,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
-import * as util from 'util';
 
-import NumberContainer from '../components/NumberContainer';
-import Card from '../components/Card';
 import MainButton from '../components/MainButton';
-import BodyText from '../components/BodyText';
 import DefaultStyles from '../constants/default-styles';
-import TitleText from '../components/TitleText';
-import Color from '../constants/colors';
+import Input from '../components/Input';
 
 const SetupScreen = props => {
   const [status, setStatus] = useState(false);
+  const [list, setList] = useState([]);
   const devices = [];
 
   const manager = new BleManager();
@@ -90,9 +81,11 @@ const SetupScreen = props => {
         const {id, name, rssi} = device;
         console.log(`New device: ${id}`);
         devices.push({id, name, rssi});
+        setList(devices);
       } else {
-        console.dir(devices);
         devices[index].rssi = device.rssi;
+        // console.dir(devices);
+        setList(devices);
       }
     });
   };
@@ -103,6 +96,26 @@ const SetupScreen = props => {
     setStatus(false);
   };
 
+  function Item({device}) {
+    return (
+      <View style={styles.list}>
+        <View style={styles.listItem}>
+          <Text style={DefaultStyles.bodyText}>
+            {device.name}
+            {'  '} {device.rssi}
+            {'  '} {device.id}
+            {'  '}
+          </Text>
+          <Input
+            style={styles.input}
+            keyboardType="default"
+            autoCapitalize="sentences"
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.screen}>
       <Text style={DefaultStyles.title}>Setup Bluetooth Device Config.</Text>
@@ -111,6 +124,19 @@ const SetupScreen = props => {
       ) : (
         <MainButton onPress={startScanHandler}>Start Scanning</MainButton>
       )}
+      {list.length == 0 && (
+        <View>
+          <Text style={DefaultStyles.title}>No peripherals</Text>
+        </View>
+      )}
+      <FlatList
+        style={styles.listContainer}
+        key={list.length}
+        extraData={list}
+        data={list}
+        renderItem={({item}) => <Item device={item} />}
+        keyExtractor={item => item.id}
+      />
     </View>
   );
 };
@@ -121,13 +147,6 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: 'center',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: Dimensions.get('window').height > 600 ? 20 : 5,
-    width: 400,
-    maxWidth: '90%',
-  },
   controls: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -136,26 +155,32 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
-    width: '60%',
-  },
-  listContainerBig: {
-    flex: 1,
-    width: '80%',
+    width: '95%',
   },
   list: {
     flexGrow: 1,
     // alignItems: 'center',
+    marginTop: 10,
     justifyContent: 'flex-end',
+  },
+  input: {
+    height: 20,
+    // paddingHorizontal: 2,
+    // paddingVertical: 5,
+    padding: 0,
+    marginVertical: 0,
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
   },
   listItem: {
     borderColor: '#ccc',
     borderWidth: 1,
     padding: 15,
-    marginVertical: 10,
+    borderRadius: 15,
     backgroundColor: 'white',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     width: '100%',
+    justifyContent: 'flex-start',
   },
 });
 
