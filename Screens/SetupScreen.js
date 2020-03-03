@@ -6,15 +6,18 @@ import {
   FlatList,
   Platform,
   PermissionsAndroid,
+  Button,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
 
 import MainButton from '../components/MainButton';
 import DefaultStyles from '../constants/default-styles';
 import Input from '../components/Input';
+import Colors from '../constants/colors';
 
 const SetupScreen = props => {
   const [status, setStatus] = useState(false);
+  const enteredValue = [];
   const [list, setList] = useState([]);
   const devices = [];
 
@@ -58,36 +61,26 @@ const SetupScreen = props => {
         // Handle error (scanning will be stopped automatically)
         return;
       }
-
-      /**
-       ** Formula to calculate distance of BLE devices using there RSSI value and there average RSSI value at one metre
-       */
-      function getRange(txCalibratedPower, rssi) {
-        var ratio_db = txCalibratedPower - rssi;
-        var ratio_linear = Math.pow(10, ratio_db / 10);
-        var range = Math.sqrt(ratio_linear);
-        return range;
-      }
-
-      /**
-       *? TxPowerLevel(RSSI value) of each BLE Device at one metre distance
-       * TODO: Measure actual value before use.
-       */
-      // var txPower = -70;
-      // const range = getRange(txPower, device.rssi);
       const deviceIn = element => element.id === device.id;
       const index = devices.findIndex(deviceIn);
       if (index == -1) {
         const {id, name, rssi} = device;
+        var txpower = -69;
         console.log(`New device: ${id}`);
-        devices.push({id, name, rssi});
+        devices.push({id, name, rssi, txpower});
         setList(devices);
       } else {
         devices[index].rssi = device.rssi;
-        // console.dir(devices);
         setList(devices);
       }
+      setList(devices);
     });
+  };
+
+  const onRssiHandler = device => {
+    const index = list.findIndex(element => element.id === device);
+    list[index].txpower = enteredValue[index];
+    console.log(list);
   };
 
   const stopScanHandler = () => {
@@ -96,7 +89,35 @@ const SetupScreen = props => {
     setStatus(false);
   };
 
-  function Item({device}) {
+  const convertArrayToObject = (array, key) => {
+    const initialValue = {};
+    return array.reduce((obj, item) => {
+      return {
+        ...obj,
+        [item[key]]: item,
+      };
+    }, initialValue);
+  };
+
+  const postHandler = () => {
+    const data = convertArrayToObject(list, 'id');
+    fetch('http://192.168.0.103:3000', {
+      method: 'POST', // or 'PUT'
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Success:', data);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  };
+
+  function Item({device, index}) {
     return (
       <View style={styles.list}>
         <View style={styles.listItem}>
@@ -108,8 +129,18 @@ const SetupScreen = props => {
           </Text>
           <Input
             style={styles.input}
-            keyboardType="default"
-            autoCapitalize="sentences"
+            maxLength={3}
+            keyboardType="numeric"
+            onChangeText={text => {
+              enteredValue[index] = text;
+            }}
+            value={enteredValue[index]}
+          />
+          <Text>{'  '}</Text>
+          <Button
+            title="Set Power"
+            onPress={() => onRssiHandler(device.id)}
+            color={Colors.accent}
           />
         </View>
       </View>
@@ -134,9 +165,14 @@ const SetupScreen = props => {
         key={list.length}
         extraData={list}
         data={list}
-        renderItem={({item}) => <Item device={item} />}
+        renderItem={({item, index}) => <Item device={item} index={index} />}
         keyExtractor={item => item.id}
       />
+      {!status && list.length > 0 && (
+        <View>
+          <MainButton onPress={postHandler}>Post Data</MainButton>
+        </View>
+      )}
     </View>
   );
 };
@@ -146,12 +182,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
     alignItems: 'center',
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    width: '80%',
   },
   listContainer: {
     flex: 1,
@@ -165,22 +195,24 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 20,
-    // paddingHorizontal: 2,
-    // paddingVertical: 5,
     padding: 0,
     marginVertical: 0,
     borderBottomColor: '#ccc',
     borderBottomWidth: 1,
   },
+  button: {
+    borderRadius: 15,
+  },
   listItem: {
     borderColor: '#ccc',
     borderWidth: 1,
-    padding: 15,
+    padding: 10,
     borderRadius: 15,
     backgroundColor: 'white',
     flexDirection: 'row',
+    alignItems: 'center',
     width: '100%',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-evenly',
   },
 });
 
