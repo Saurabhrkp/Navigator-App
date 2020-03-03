@@ -25,7 +25,7 @@ import Color from '../constants/colors';
 
 const SetupScreen = props => {
   const [status, setStatus] = useState(false);
-  const [devices, setNewDevice] = useState([]);
+  const devices = [];
 
   const manager = new BleManager();
 
@@ -82,19 +82,17 @@ const SetupScreen = props => {
        *? TxPowerLevel(RSSI value) of each BLE Device at one metre distance
        * TODO: Measure actual value before use.
        */
-      var txPower = -70;
-      const range = getRange(txPower, device.rssi);
-      const existingIndex = devices.findIndex(
-        devices => devices.id === device.id,
-      );
-      if (existingIndex >= 0) {
-        console.log(
-          `${device.name}       ${device.rssi}        ${device.id}      ${range}`,
-        );
+      // var txPower = -70;
+      // const range = getRange(txPower, device.rssi);
+      const deviceIn = element => element.id === device.id;
+      const index = devices.findIndex(deviceIn);
+      if (index == -1) {
+        const {id, name, rssi} = device;
+        console.log(`New device: ${id}`);
+        devices.push({id, name, rssi});
       } else {
-        const {id, name, txPowerLevel, localName} = device;
-        Device = {id, name, txPowerLevel, localName};
-        setNewDevice(devices => [...devices, devices.push(Device)]);
+        console.dir(devices);
+        devices[index].rssi = device.rssi;
       }
     });
   };
