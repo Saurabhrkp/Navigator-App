@@ -79,7 +79,7 @@ const SetupScreen = props => {
 
   const onRssiHandler = device => {
     const index = list.findIndex(element => element.id === device);
-    list[index].txpower = enteredValue[index];
+    list[index].txpower = parseInt(enteredValue[index]);
     console.log(list);
   };
 
@@ -89,20 +89,16 @@ const SetupScreen = props => {
     setStatus(false);
   };
 
-  const convertArrayToObject = (array, key) => {
-    const initialValue = {};
-    return array.reduce((obj, item) => {
-      return {
-        ...obj,
-        [item[key]]: item,
-      };
-    }, initialValue);
+  const toObject = arr => {
+    var rv = {};
+    for (var i = 0; i < arr.length; ++i) rv[i] = arr[i];
+    return rv;
   };
 
   const postHandler = () => {
-    const data = convertArrayToObject(list, 'id');
-    fetch('http://192.168.0.103:3000', {
-      method: 'POST', // or 'PUT'
+    const data = toObject(list);
+    fetch('http://192.168.1.103:3000', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
