@@ -9,8 +9,11 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
+
+import Header from '../components/Header';
 import Input from '../components/Input';
 import MainButton from '../components/MainButton';
 import Colors from '../constants/colors';
@@ -79,13 +82,6 @@ const SetupScreen = props => {
     });
   };
 
-  const onInputHandler = device => {
-    const index = list.findIndex(element => element.id === device);
-    list[index].txpower = parseInt(enteredRssi[index]);
-    list[index].region = parseInt(enteredRegion[index]);
-    console.log(list);
-  };
-
   const stopScanHandler = () => {
     manager.stopDeviceScan();
     console.log('Stopped Scanning');
@@ -149,13 +145,19 @@ const SetupScreen = props => {
     console.log(list);
   };
 
+  const onInputHandler = device => {
+    const index = list.findIndex(element => element.id === device);
+    list[index].txpower = parseInt(enteredRssi[index]);
+    list[index].region = parseInt(enteredRegion[index]);
+    console.log(list);
+  };
+
   const Check = ({device, index}) => {
     return (
       <View style={styles.list}>
         <View style={styles.listItem}>
           <CheckBox
             value={device.checked}
-            // onChange={() => checkThisBox(device, index)}
             onValueChange={() => checkThisBox(device, index)}
           />
         </View>
@@ -202,45 +204,52 @@ const SetupScreen = props => {
   };
 
   return (
-    <View style={styles.screen}>
-      <Text style={DefaultStyles.title}>Setup Bluetooth Device Config.</Text>
-      {status ? (
-        <MainButton onPress={stopScanHandler}>Stop Scanning</MainButton>
-      ) : (
-        <MainButton onPress={startScanHandler}>Start Scanning</MainButton>
-      )}
-      {list.length == 0 && (
-        <View>
-          <Text style={DefaultStyles.title}>No peripherals</Text>
-        </View>
-      )}
-      <View style={styles.control}>
-        {!status && list.length > 0 && (
+    <ScrollView>
+      <Header title={'Navigation App'} />
+      <View style={styles.screen}>
+        <Text style={[DefaultStyles.title, {padding: 10}]}>
+          Setup Bluetooth Device Config.
+        </Text>
+        {status ? (
+          <MainButton onPress={stopScanHandler}>Stop Scanning</MainButton>
+        ) : (
+          <MainButton onPress={startScanHandler}>Start Scanning</MainButton>
+        )}
+        {list.length == 0 && (
+          <View>
+            <Text style={[DefaultStyles.title, {padding: 10}]}>
+              No BLE Devices
+            </Text>
+          </View>
+        )}
+        <View style={styles.control}>
+          {!status && list.length > 0 && (
+            <FlatList
+              style={styles.checkboxContainer}
+              data={list}
+              renderItem={({item, index}) => (
+                <Check device={item} index={index} />
+              )}
+              keyExtractor={item => item.id}
+            />
+          )}
           <FlatList
-            style={styles.checkboxContainer}
+            style={styles.listContainer}
+            key={list.length}
+            extraData={list}
             data={list}
-            renderItem={({item, index}) => (
-              <Check device={item} index={index} />
-            )}
+            renderItem={({item, index}) => <Item device={item} index={index} />}
             keyExtractor={item => item.id}
           />
-        )}
-        <FlatList
-          style={styles.listContainer}
-          key={list.length}
-          extraData={list}
-          data={list}
-          renderItem={({item, index}) => <Item device={item} index={index} />}
-          keyExtractor={item => item.id}
-        />
-      </View>
-
-      {!status && list.length > 0 && (
-        <View>
-          <MainButton onPress={postHandler}>Post Data</MainButton>
         </View>
-      )}
-    </View>
+
+        {!status && list.length > 0 && (
+          <View>
+            <MainButton onPress={postHandler}>Post Data</MainButton>
+          </View>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 

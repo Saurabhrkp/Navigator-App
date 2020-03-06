@@ -1,14 +1,16 @@
-import React, {useState, useEffect} from 'react';
-import {View, StyleSheet, Dimensions, ScrollView} from 'react-native';
+import React from 'react';
+import {View, StyleSheet, ScrollView} from 'react-native';
 
+import Header from '../components/Header';
 import Card from '../components/Card';
 import BodyText from '../components/BodyText';
 import TitleText from '../components/TitleText';
-import MainButton from '../components/MainButton.android';
+import MainButton from '../components/MainButton';
 
 const StartScreen = props => {
   return (
     <ScrollView>
+      <Header title={'Navigation App'} />
       <View style={styles.screen}>
         <TitleText style={styles.title}>BLE Indoor Navigation App</TitleText>
         <Card style={styles.inputContainer}>
