@@ -1,24 +1,26 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Platform,
-  PermissionsAndroid,
+  Alert,
   Button,
+  CheckBox,
+  FlatList,
+  PermissionsAndroid,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
-
-import MainButton from '../components/MainButton';
-import DefaultStyles from '../constants/default-styles';
 import Input from '../components/Input';
+import MainButton from '../components/MainButton';
 import Colors from '../constants/colors';
+import DefaultStyles from '../constants/default-styles';
 
 const SetupScreen = props => {
   const [status, setStatus] = useState(false);
-  const enteredValue = [];
   const [list, setList] = useState([]);
+  const enteredRssi = [];
+  const enteredRegion = [];
   const devices = [];
 
   const manager = new BleManager();
@@ -43,7 +45,7 @@ const SetupScreen = props => {
         }
       });
     }
-  }, []);
+  }, [Platform.OS]);
 
   const subscription = manager.onStateChange(state => {
     if (state === 'PoweredOn') {
@@ -66,20 +68,21 @@ const SetupScreen = props => {
       if (index == -1) {
         const {id, name, rssi} = device;
         var txpower = -69;
+        var region = 1;
+        var checked = false;
         console.log(`New device: ${id}`);
-        devices.push({id, name, rssi, txpower});
-        setList(devices);
+        devices.push({id, name, rssi, txpower, checked, region});
       } else {
         devices[index].rssi = device.rssi;
-        setList(devices);
       }
       setList(devices);
     });
   };
 
-  const onRssiHandler = device => {
+  const onInputHandler = device => {
     const index = list.findIndex(element => element.id === device);
-    list[index].txpower = parseInt(enteredValue[index]);
+    list[index].txpower = parseInt(enteredRssi[index]);
+    list[index].region = parseInt(enteredRegion[index]);
     console.log(list);
   };
 
@@ -95,9 +98,27 @@ const SetupScreen = props => {
     return rv;
   };
 
+  var removeByAttr = function(arr, attr, value) {
+    var i = arr.length;
+    while (i--) {
+      if (
+        arr[i] &&
+        arr[i].hasOwnProperty(attr) &&
+        arguments.length > 2 &&
+        arr[i][attr] === value
+      ) {
+        arr.splice(i, 1);
+      }
+    }
+    return arr;
+  };
+
   const postHandler = () => {
-    const data = toObject(list);
-    fetch('http://192.168.1.103:3000', {
+    console.log(list);
+    const result = removeByAttr(list, 'checked', false);
+    console.log(result);
+    const data = toObject(result);
+    fetch('http://192.168.1.106:3000', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,22 +126,50 @@ const SetupScreen = props => {
       body: JSON.stringify(data),
     })
       .then(response => response.json())
-      .then(data => {
-        console.log('Success:', data);
+      .then(result => {
+        console.log('Success:', result);
+        if (!result.error) {
+          Alert.alert('Successful', 'Posted data to server Success', [
+            {text: 'OK', onPress: () => null},
+          ]);
+        } else {
+          Alert.alert(result.error_msg);
+          console.log(result);
+        }
       })
       .catch(error => {
         console.error('Error:', error);
+        alert('result:' + error);
       });
   };
 
-  function Item({device, index}) {
+  const checkThisBox = (device, index) => {
+    device.checked = !device.checked;
+    list[index].checked = device.checked;
+    console.log(list);
+  };
+
+  const Check = ({device, index}) => {
+    return (
+      <View style={styles.list}>
+        <View style={styles.listItem}>
+          <CheckBox
+            value={device.checked}
+            // onChange={() => checkThisBox(device, index)}
+            onValueChange={() => checkThisBox(device, index)}
+          />
+        </View>
+      </View>
+    );
+  };
+
+  const Item = ({device, index}) => {
     return (
       <View style={styles.list}>
         <View style={styles.listItem}>
           <Text style={DefaultStyles.bodyText}>
-            {device.name}
+            {device.name ? device.name : 'No Name'}
             {'  '} {device.rssi}
-            {'  '} {device.id}
             {'  '}
           </Text>
           <Input
@@ -128,20 +177,29 @@ const SetupScreen = props => {
             maxLength={3}
             keyboardType="numeric"
             onChangeText={text => {
-              enteredValue[index] = text;
+              enteredRssi[index] = text;
             }}
-            value={enteredValue[index]}
+            value={enteredRssi[index]}
+          />
+          <Input
+            style={styles.input}
+            maxLength={3}
+            keyboardType="numeric"
+            onChangeText={text => {
+              enteredRegion[index] = text;
+            }}
+            value={enteredRegion[index]}
           />
           <Text>{'  '}</Text>
           <Button
             title="Set Power"
-            onPress={() => onRssiHandler(device.id)}
+            onPress={() => onInputHandler(device.id)}
             color={Colors.accent}
           />
         </View>
       </View>
     );
-  }
+  };
 
   return (
     <View style={styles.screen}>
@@ -156,14 +214,27 @@ const SetupScreen = props => {
           <Text style={DefaultStyles.title}>No peripherals</Text>
         </View>
       )}
-      <FlatList
-        style={styles.listContainer}
-        key={list.length}
-        extraData={list}
-        data={list}
-        renderItem={({item, index}) => <Item device={item} index={index} />}
-        keyExtractor={item => item.id}
-      />
+      <View style={styles.control}>
+        {!status && list.length > 0 && (
+          <FlatList
+            style={styles.checkboxContainer}
+            data={list}
+            renderItem={({item, index}) => (
+              <Check device={item} index={index} />
+            )}
+            keyExtractor={item => item.id}
+          />
+        )}
+        <FlatList
+          style={styles.listContainer}
+          key={list.length}
+          extraData={list}
+          data={list}
+          renderItem={({item, index}) => <Item device={item} index={index} />}
+          keyExtractor={item => item.id}
+        />
+      </View>
+
       {!status && list.length > 0 && (
         <View>
           <MainButton onPress={postHandler}>Post Data</MainButton>
@@ -179,36 +250,36 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: 'center',
   },
+  control: {
+    flexGrow: 1,
+    flexDirection: 'row',
+  },
   listContainer: {
-    flex: 1,
-    width: '95%',
+    width: '80%',
+  },
+  checkboxContainer: {
+    width: '5%',
   },
   list: {
     flexGrow: 1,
-    // alignItems: 'center',
     marginTop: 10,
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
   },
   input: {
-    height: 20,
+    height: 32,
     padding: 0,
     marginVertical: 0,
-    borderBottomColor: '#ccc',
-    borderBottomWidth: 1,
-  },
-  button: {
-    borderRadius: 15,
+    borderBottomColor: Colors.accent,
+    borderBottomWidth: 2,
   },
   listItem: {
     borderColor: '#ccc',
     borderWidth: 1,
     padding: 10,
-    borderRadius: 15,
-    backgroundColor: 'white',
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-around',
   },
 });
 

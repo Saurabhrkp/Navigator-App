@@ -8,7 +8,7 @@ const TitleText = props => (
 const styles = StyleSheet.create({
   title: {
     fontFamily: 'OpenSans-Bold',
-    fontSize: 18,
+    fontSize: 24,
   },
 });
 

@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontFamily: 'OpenSans-Regular',
-    fontSize: 18,
+    fontSize: 22,
   },
 });
 

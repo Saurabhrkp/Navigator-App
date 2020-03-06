@@ -9,6 +9,7 @@ const styles = StyleSheet.create({
   input: {
     height: 30,
     marginVertical: 10,
+    fontSize: 22,
   },
 });
 
