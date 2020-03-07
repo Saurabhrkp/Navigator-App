@@ -1,28 +1,35 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   Dimensions,
-  ScrollView,
+  TouchableNativeFeedback,
 } from 'react-native';
 import Tts from 'react-native-tts';
+import {BleManager} from 'react-native-ble-plx';
 
-import TitleText from '../components/TitleText';
-import MainButton from '../components/MainButton';
 import Colors from '../constants/colors';
-import DefaultStyles from '../constants/default-styles';
 
 const GameOverScreen = props => {
   const [status, setStatus] = useState(false);
   const [list, setList] = useState([]);
   const devices = [];
 
+  useEffect(() => {
+    Tts.getInitStatus().then(() => {
+      Tts.speak('This is Demo page.');
+      // Screen is divided into two parts, and both parts are button for interaction.
+    });
+  }, []);
+
+  const manager = new BleManager();
+
   const startScanHandler = () => {
     let LowLatency = 2;
     let ScanOptions = {scanMode: LowLatency};
     console.log('Started Scanning');
+    Tts.speak('Started Scanning');
     setStatus(!status);
     manager.startDeviceScan(null, ScanOptions, (error, device) => {
       if (error) {
@@ -33,12 +40,9 @@ const GameOverScreen = props => {
       const index = devices.findIndex(deviceIn);
       if (index == -1) {
         const {id, name, rssi} = device;
-        var txpower = -69;
-        var region = 1;
-        var checked = false;
-        Tts.speak(`New device: ${name}`);
+        Tts.speak(`New device: ${name} added`);
         console.log(`New device: ${id}`);
-        devices.push({id, name, rssi, txpower, checked, region});
+        devices.push({id, name, rssi});
       } else {
         devices[index].rssi = device.rssi;
       }
@@ -46,74 +50,92 @@ const GameOverScreen = props => {
     });
   };
 
+  useEffect(() => {
+    let interval = null;
+    if (status) {
+      interval = setInterval(() => {
+        postHandler();
+        console.log('Post handler called');
+        Tts.speak('Post handler called');
+      }, 5000);
+    } else if (!status) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [status]);
+
+  const toObject = arr => {
+    var rv = {};
+    for (var i = 0; i < arr.length; ++i) rv[i] = arr[i];
+    return rv;
+  };
+
+  const postHandler = () => {
+    const data = toObject(list);
+    fetch('http://192.168.1.106:3000/demo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+      .then(response => response.json())
+      .then(result => {
+        console.log('Success:', result);
+        Tts.speak(`Success: ${result}`);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('result:' + error);
+      });
+  };
+
   const stopScanHandler = () => {
     manager.stopDeviceScan();
     console.log('Stopped Scanning');
+    Tts.speak('Stopped Scanning');
     setStatus(!status);
   };
-  Tts.addEventListener('tts-start', event => console.log('start'));
-  Tts.addEventListener('tts-finish', event => console.log('finish'));
-  Tts.addEventListener('tts-cancel', event => console.log('cancel'));
+
+  const ItemSeparator = <View style={styles.separator} />;
 
   return (
-    <ScrollView>
-      <View style={styles.screen}>
-        <TitleText>Demo Page</TitleText>
-        <View style={styles.imageContainer}>
-          <Image
-            source={require('../assets/success.png')}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </View>
-        <View style={styles.resultContainer}>
-          <Text style={[DefaultStyles.title, styles.resultText]}>
-            This is Test App
-          </Text>
-        </View>
-
-        <MainButton
-          onPress={() => {
-            props.navigation.navigate('Start');
-          }}>
-          Start Scanning
-        </MainButton>
-      </View>
-    </ScrollView>
+    <View style={styles.screen}>
+      {!status ? (
+        <TouchableNativeFeedback
+          onPress={() => console.warn('press')}
+          onLongPress={startScanHandler}>
+          <View style={[styles.button, {backgroundColor: Colors.primary}]} />
+        </TouchableNativeFeedback>
+      ) : (
+        <TouchableNativeFeedback
+          onPress={() => console.warn('press')}
+          onLongPress={stopScanHandler}>
+          <View style={[styles.button, {backgroundColor: Colors.primary}]} />
+        </TouchableNativeFeedback>
+      )}
+      {ItemSeparator}
+      <TouchableNativeFeedback
+        onPress={() => console.warn('press')}
+        onLongPress={() => console.warn('Long Press')}>
+        <View style={[styles.button, {backgroundColor: Colors.accent}]} />
+      </TouchableNativeFeedback>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
   },
-  imageContainer: {
-    width: Dimensions.get('window').width * 0.7,
-    height: Dimensions.get('window').width * 0.7,
-    borderRadius: (Dimensions.get('window').width * 0.7) / 2,
-    borderWidth: 3,
-    borderColor: 'black',
-    overflow: 'hidden',
-    marginVertical: Dimensions.get('window').height / 30,
+  button: {
+    height: Dimensions.get('window').height * 0.5,
   },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  resultContainer: {
-    marginHorizontal: 30,
-    marginVertical: Dimensions.get('window').height / 60,
-  },
-  resultText: {
-    textAlign: 'center',
-    fontSize: Dimensions.get('window').height < 400 ? 16 : 20,
-  },
-  highlight: {
-    color: Colors.primary,
-    fontFamily: 'OpenSans-Bold',
+  separator: {
+    height: 50,
+    backgroundColor: '#863bd8',
   },
 });
 
