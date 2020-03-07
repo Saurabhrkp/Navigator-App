@@ -31,10 +31,11 @@ const MainButton = props => {
 const styles = StyleSheet.create({
   buttonContainer: {
     borderRadius: 25,
+    padding: 10,
     overflow: 'hidden',
   },
   button: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 25,

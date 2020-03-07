@@ -1,11 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Alert,
   Button,
   CheckBox,
   FlatList,
-  PermissionsAndroid,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -25,30 +23,9 @@ const SetupScreen = props => {
   const enteredRssi = [];
   const enteredRegion = [];
   const devices = [];
+  console.disableYellowBox = true;
 
   const manager = new BleManager();
-
-  useEffect(() => {
-    if (Platform.OS === 'android' && Platform.Version >= 23) {
-      PermissionsAndroid.check(
-        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-      ).then(result => {
-        if (result) {
-          console.log('Permission is OK');
-        } else {
-          PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-          ).then(result => {
-            if (result) {
-              console.log('User accept');
-            } else {
-              console.log('User refuse');
-            }
-          });
-        }
-      });
-    }
-  }, [Platform.OS]);
 
   const subscription = manager.onStateChange(state => {
     if (state === 'PoweredOn') {
@@ -60,7 +37,7 @@ const SetupScreen = props => {
     let LowLatency = 2;
     let ScanOptions = {scanMode: LowLatency};
     console.log('Started Scanning');
-    setStatus(true);
+    setStatus(!status);
     manager.startDeviceScan(null, ScanOptions, (error, device) => {
       if (error) {
         // Handle error (scanning will be stopped automatically)
@@ -85,7 +62,7 @@ const SetupScreen = props => {
   const stopScanHandler = () => {
     manager.stopDeviceScan();
     console.log('Stopped Scanning');
-    setStatus(false);
+    setStatus(!status);
   };
 
   const toObject = arr => {
@@ -245,7 +222,9 @@ const SetupScreen = props => {
 
         {!status && list.length > 0 && (
           <View>
-            <MainButton onPress={postHandler}>Post Data</MainButton>
+            <MainButton style={{margin: 20}} onPress={postHandler}>
+              Post Data
+            </MainButton>
           </View>
         )}
       </View>

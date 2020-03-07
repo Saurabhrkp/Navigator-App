@@ -1,21 +1,53 @@
-import React from 'react';
-import {View, StyleSheet, ScrollView} from 'react-native';
+import React, {useEffect} from 'react';
+import {
+  View,
+  StyleSheet,
+  PermissionsAndroid,
+  Platform,
+  ScrollView,
+  Text,
+} from 'react-native';
 
 import Header from '../components/Header';
 import Card from '../components/Card';
-import BodyText from '../components/BodyText';
-import TitleText from '../components/TitleText';
 import MainButton from '../components/MainButton';
+import DefaultStyles from '../constants/default-styles';
 
 const StartScreen = props => {
+  useEffect(() => {
+    if (Platform.OS === 'android' && Platform.Version >= 23) {
+      PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+      ).then(result => {
+        if (result) {
+          console.log('Permission is OK');
+        } else {
+          PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+          ).then(result => {
+            if (result) {
+              console.log('User accept');
+            } else {
+              console.log('User refuse');
+            }
+          });
+        }
+      });
+    }
+  }, [Platform.OS]);
+
   return (
     <ScrollView>
       <Header title={'Navigation App'} />
       <View style={styles.screen}>
-        <TitleText style={styles.title}>BLE Indoor Navigation App</TitleText>
+        <Text style={[DefaultStyles.title, styles.title]}>
+          BLE Indoor Navigation App
+        </Text>
         <Card style={styles.inputContainer}>
-          <BodyText style={styles.body}>Setup Configuration</BodyText>
-          <View style={styles.buttonContainer}>
+          <Text style={[DefaultStyles.bodyText, styles.body]}>
+            Setup Configuration
+          </Text>
+          <View>
             <MainButton
               onPress={() => {
                 props.navigation.navigate('Setup');
@@ -23,8 +55,8 @@ const StartScreen = props => {
               Setup
             </MainButton>
           </View>
-          <BodyText style={styles.body}>Run a Test</BodyText>
-          <View style={styles.buttonContainer}>
+          <Text style={[DefaultStyles.bodyText, styles.body]}>Run a Test</Text>
+          <View>
             <MainButton
               onPress={() => {
                 props.navigation.navigate('Demo');
@@ -45,31 +77,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 26,
     marginVertical: 10,
     marginBottom: 20,
-    fontFamily: 'OpenSans-Bold',
   },
   body: {
-    fontSize: 20,
     marginVertical: 20,
     marginBottom: 10,
-    fontFamily: 'OpenSans-Bold',
   },
   inputContainer: {
     width: '80%',
-    // maxWidth: '80%',
     maxWidth: '95%',
     minWidth: 300,
     alignItems: 'center',
     alignContent: 'center',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'center',
-    paddingHorizontal: 15,
-    alignItems: 'center',
   },
 });
 

@@ -1,27 +1,60 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Button,
   Image,
   Dimensions,
   ScrollView,
 } from 'react-native';
 import Tts from 'react-native-tts';
 
-import BodyText from '../components/BodyText';
 import TitleText from '../components/TitleText';
 import MainButton from '../components/MainButton';
 import Colors from '../constants/colors';
+import DefaultStyles from '../constants/default-styles';
 
 const GameOverScreen = props => {
-  Tts.addEventListener('tts-start', event => console.log('start', event));
-  Tts.addEventListener('tts-finish', event => console.log('finish', event));
-  Tts.addEventListener('tts-cancel', event => console.log('cancel', event));
-  Tts.getInitStatus().then(() => {
-    Tts.speak('Hello, world!');
-  });
+  const [status, setStatus] = useState(false);
+  const [list, setList] = useState([]);
+  const devices = [];
+
+  const startScanHandler = () => {
+    let LowLatency = 2;
+    let ScanOptions = {scanMode: LowLatency};
+    console.log('Started Scanning');
+    setStatus(!status);
+    manager.startDeviceScan(null, ScanOptions, (error, device) => {
+      if (error) {
+        // Handle error (scanning will be stopped automatically)
+        return;
+      }
+      const deviceIn = element => element.id === device.id;
+      const index = devices.findIndex(deviceIn);
+      if (index == -1) {
+        const {id, name, rssi} = device;
+        var txpower = -69;
+        var region = 1;
+        var checked = false;
+        Tts.speak(`New device: ${name}`);
+        console.log(`New device: ${id}`);
+        devices.push({id, name, rssi, txpower, checked, region});
+      } else {
+        devices[index].rssi = device.rssi;
+      }
+      setList(devices);
+    });
+  };
+
+  const stopScanHandler = () => {
+    manager.stopDeviceScan();
+    console.log('Stopped Scanning');
+    setStatus(!status);
+  };
+  Tts.addEventListener('tts-start', event => console.log('start'));
+  Tts.addEventListener('tts-finish', event => console.log('finish'));
+  Tts.addEventListener('tts-cancel', event => console.log('cancel'));
+
   return (
     <ScrollView>
       <View style={styles.screen}>
@@ -34,10 +67,9 @@ const GameOverScreen = props => {
           />
         </View>
         <View style={styles.resultContainer}>
-          <BodyText style={styles.resultText}>
+          <Text style={[DefaultStyles.title, styles.resultText]}>
             This is Test App
-            <Text style={styles.highlight}>{props.userNumber}</Text>.
-          </BodyText>
+          </Text>
         </View>
 
         <MainButton
