@@ -8,6 +8,7 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
+import Tts from 'react-native-tts';
 
 import BodyText from '../components/BodyText';
 import TitleText from '../components/TitleText';
@@ -15,6 +16,12 @@ import MainButton from '../components/MainButton';
 import Colors from '../constants/colors';
 
 const GameOverScreen = props => {
+  Tts.addEventListener('tts-start', event => console.log('start', event));
+  Tts.addEventListener('tts-finish', event => console.log('finish', event));
+  Tts.addEventListener('tts-cancel', event => console.log('cancel', event));
+  Tts.getInitStatus().then(() => {
+    Tts.speak('Hello, world!');
+  });
   return (
     <ScrollView>
       <View style={styles.screen}>
