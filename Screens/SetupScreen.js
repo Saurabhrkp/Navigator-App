@@ -5,6 +5,7 @@ import {
   Text,
   View,
   ScrollView,
+  Vibration,
   TouchableNativeFeedback,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
@@ -111,6 +112,7 @@ const SetupScreen = props => {
   const postHandler = () => {
     if (list.length < 1) {
       console.log('Nothing to post');
+      Vibration.vibrate(200);
       return;
     }
     const data = toObject(list);
@@ -124,6 +126,7 @@ const SetupScreen = props => {
       .then(response => response.json())
       .then(result => {
         console.log('Success:', result);
+        Vibration.vibrate(100);
       })
       .catch(error => {
         console.error('Error:', error);
