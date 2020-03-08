@@ -121,6 +121,7 @@ const SetupScreen = props => {
       return;
     }
     const data = toObject(list);
+    console.log(data);
     fetch('http://192.168.1.106:3000', {
       method: 'POST',
       headers: {

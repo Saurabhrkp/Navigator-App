@@ -1,9 +1,10 @@
 import React, {useState, useEffect} from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Dimensions,
+  Vibration,
+  ToastAndroid,
   TouchableNativeFeedback,
 } from 'react-native';
 import Tts from 'react-native-tts';
@@ -28,7 +29,8 @@ const GameOverScreen = props => {
   const startScanHandler = () => {
     let LowLatency = 2;
     let ScanOptions = {scanMode: LowLatency};
-    console.log('Started Scanning');
+    ToastAndroid.show('Started Scanning', ToastAndroid.SHORT);
+    Vibration.vibrate(100);
     Tts.speak('Started Scanning');
     setStatus(!status);
     manager.startDeviceScan(null, ScanOptions, (error, device) => {
@@ -93,6 +95,8 @@ const GameOverScreen = props => {
   const stopScanHandler = () => {
     manager.stopDeviceScan();
     console.log('Stopped Scanning');
+    ToastAndroid.show('Stopped Scanning', ToastAndroid.SHORT);
+    Vibration.vibrate(100);
     Tts.speak('Stopped Scanning');
     setStatus(!status);
   };
