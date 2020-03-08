@@ -6,6 +6,7 @@ import {
   View,
   ScrollView,
   Vibration,
+  ToastAndroid,
   TouchableNativeFeedback,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
@@ -71,6 +72,8 @@ const SetupScreen = props => {
     let ScanCallbackType = true;
     let ScanOptions = {scanMode: LowLatency, callbackType: ScanCallbackType};
     console.log('Started Scanning');
+    ToastAndroid.show('Started Scanning', ToastAndroid.SHORT);
+    Vibration.vibrate(100);
     setStatus(true);
     manager.startDeviceScan(null, ScanOptions, (error, device) => {
       if (error) {
@@ -84,7 +87,6 @@ const SetupScreen = props => {
         const {id, name, rssi} = device;
         console.log(`New device: ${id}`);
         devices.push({id, name, rssi, region});
-        console.log(devices);
         setList(devices);
       } else {
         devices[index].region = region;
@@ -100,6 +102,8 @@ const SetupScreen = props => {
   const stopScanHandler = () => {
     manager.stopDeviceScan();
     console.log('Stopped Scanning');
+    ToastAndroid.show('Stopped Scanning', ToastAndroid.SHORT);
+    Vibration.vibrate(200);
     setStatus(false);
   };
 
@@ -112,6 +116,7 @@ const SetupScreen = props => {
   const postHandler = () => {
     if (list.length < 1) {
       console.log('Nothing to post');
+      ToastAndroid.show('Nothing to posted', ToastAndroid.SHORT);
       Vibration.vibrate(200);
       return;
     }
@@ -126,6 +131,7 @@ const SetupScreen = props => {
       .then(response => response.json())
       .then(result => {
         console.log('Success:', result);
+        ToastAndroid.show('Successfully posted', ToastAndroid.SHORT);
         Vibration.vibrate(100);
       })
       .catch(error => {
