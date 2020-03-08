@@ -109,7 +109,10 @@ const SetupScreen = props => {
   };
 
   const postHandler = () => {
-    console.log(list);
+    if (list.length < 1) {
+      console.log('Nothing to post');
+      return;
+    }
     const data = toObject(list);
     fetch('http://192.168.1.106:3000', {
       method: 'POST',
