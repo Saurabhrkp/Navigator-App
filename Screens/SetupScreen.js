@@ -1,27 +1,25 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
-  Alert,
-  Button,
-  CheckBox,
   FlatList,
   StyleSheet,
   Text,
   View,
   ScrollView,
+  TouchableNativeFeedback,
 } from 'react-native';
 import {BleManager} from 'react-native-ble-plx';
 
 import Header from '../components/Header';
-import Input from '../components/Input';
 import MainButton from '../components/MainButton';
 import Colors from '../constants/colors';
 import DefaultStyles from '../constants/default-styles';
 
 const SetupScreen = props => {
   const [status, setStatus] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [isActive, setIsActive] = useState(false);
   const [list, setList] = useState([]);
-  const enteredRssi = [];
-  const enteredRegion = [];
+  const [region, setRegion] = useState(1);
   const devices = [];
   console.disableYellowBox = true;
 
@@ -33,36 +31,75 @@ const SetupScreen = props => {
     }
   }, true);
 
+  const reset = () => {
+    setSeconds(0);
+    setIsActive(false);
+  };
+
+  const toggle = () => {
+    setIsActive(!isActive);
+  };
+
+  useEffect(() => {
+    let interval = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds(seconds => seconds + 1);
+      }, 1000);
+    } else if (!isActive && seconds !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, seconds]);
+
+  useEffect(() => {
+    let interval = null;
+    if (status) {
+      interval = setInterval(() => {
+        postHandler();
+        console.log('Post handler called');
+      }, 5000);
+    } else if (!status) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [status]);
+
   const startScanHandler = () => {
     let LowLatency = 2;
-    let ScanOptions = {scanMode: LowLatency};
+    let ScanCallbackType = true;
+    let ScanOptions = {scanMode: LowLatency, callbackType: ScanCallbackType};
     console.log('Started Scanning');
-    setStatus(!status);
+    setStatus(true);
     manager.startDeviceScan(null, ScanOptions, (error, device) => {
       if (error) {
         // Handle error (scanning will be stopped automatically)
         return;
       }
+      setList(devices);
       const deviceIn = element => element.id === device.id;
       const index = devices.findIndex(deviceIn);
       if (index == -1) {
         const {id, name, rssi} = device;
-        var txpower = -69;
-        var region = 1;
-        var checked = false;
         console.log(`New device: ${id}`);
-        devices.push({id, name, rssi, txpower, checked, region});
+        devices.push({id, name, rssi, region});
+        console.log(devices);
+        setList(devices);
       } else {
+        devices[index].region = region;
         devices[index].rssi = device.rssi;
+        setList(devices);
       }
-      setList(devices);
     });
+    setTimeout(() => {
+      stopScanHandler();
+    }, 18000);
   };
 
   const stopScanHandler = () => {
     manager.stopDeviceScan();
     console.log('Stopped Scanning');
-    setStatus(!status);
+    setStatus(false);
   };
 
   const toObject = arr => {
@@ -71,26 +108,9 @@ const SetupScreen = props => {
     return rv;
   };
 
-  var removeByAttr = function(arr, attr, value) {
-    var i = arr.length;
-    while (i--) {
-      if (
-        arr[i] &&
-        arr[i].hasOwnProperty(attr) &&
-        arguments.length > 2 &&
-        arr[i][attr] === value
-      ) {
-        arr.splice(i, 1);
-      }
-    }
-    return arr;
-  };
-
   const postHandler = () => {
     console.log(list);
-    const result = removeByAttr(list, 'checked', false);
-    console.log(result);
-    const data = toObject(result);
+    const data = toObject(list);
     fetch('http://192.168.1.106:3000', {
       method: 'POST',
       headers: {
@@ -101,14 +121,6 @@ const SetupScreen = props => {
       .then(response => response.json())
       .then(result => {
         console.log('Success:', result);
-        if (!result.error) {
-          Alert.alert('Successful', 'Posted data to server Success', [
-            {text: 'OK', onPress: () => null},
-          ]);
-        } else {
-          Alert.alert(result.error_msg);
-          console.log(result);
-        }
       })
       .catch(error => {
         console.error('Error:', error);
@@ -116,65 +128,19 @@ const SetupScreen = props => {
       });
   };
 
-  const checkThisBox = (device, index) => {
-    device.checked = !device.checked;
-    list[index].checked = device.checked;
-    console.log(list);
-  };
-
-  const onInputHandler = device => {
-    const index = list.findIndex(element => element.id === device);
-    list[index].txpower = parseInt(enteredRssi[index]);
-    list[index].region = parseInt(enteredRegion[index]);
-    console.log(list);
-  };
-
-  const Check = ({device, index}) => {
-    return (
-      <View style={styles.list}>
-        <View style={styles.listItem}>
-          <CheckBox
-            value={device.checked}
-            onValueChange={() => checkThisBox(device, index)}
-          />
-        </View>
-      </View>
-    );
-  };
+  const ItemSeparator = <View style={styles.separator} />;
 
   const Item = ({device, index}) => {
     return (
       <View style={styles.list}>
         <View style={styles.listItem}>
-          <Text style={DefaultStyles.bodyText}>
-            {device.name ? device.name : 'No Name'}
+          <Text style={[DefaultStyles.bodyText, {padding: 3}]}>
+            {device.name ? device.name : 'Null'}
             {'  '} {device.rssi}
             {'  '}
+            {device.id}
+            {'  '}Region: {region}
           </Text>
-          <Input
-            style={styles.input}
-            maxLength={3}
-            keyboardType="numeric"
-            onChangeText={text => {
-              enteredRssi[index] = text;
-            }}
-            value={enteredRssi[index]}
-          />
-          <Input
-            style={styles.input}
-            maxLength={3}
-            keyboardType="numeric"
-            onChangeText={text => {
-              enteredRegion[index] = text;
-            }}
-            value={enteredRegion[index]}
-          />
-          <Text>{'  '}</Text>
-          <Button
-            title="Set Power"
-            onPress={() => onInputHandler(device.id)}
-            color={Colors.accent}
-          />
         </View>
       </View>
     );
@@ -185,7 +151,7 @@ const SetupScreen = props => {
       <Header title={'Navigation App'} />
       <View style={styles.screen}>
         <Text style={[DefaultStyles.title, {padding: 10}]}>
-          Setup Bluetooth Device Config.
+          Setup Bluetooth Device Config. {seconds}
         </Text>
         {status ? (
           <MainButton onPress={stopScanHandler}>Stop Scanning</MainButton>
@@ -200,16 +166,6 @@ const SetupScreen = props => {
           </View>
         )}
         <View style={styles.control}>
-          {!status && list.length > 0 && (
-            <FlatList
-              style={styles.checkboxContainer}
-              data={list}
-              renderItem={({item, index}) => (
-                <Check device={item} index={index} />
-              )}
-              keyExtractor={item => item.id}
-            />
-          )}
           <FlatList
             style={styles.listContainer}
             key={list.length}
@@ -219,13 +175,46 @@ const SetupScreen = props => {
             keyExtractor={item => item.id}
           />
         </View>
-
-        {!status && list.length > 0 && (
-          <View>
-            <MainButton style={{margin: 20}} onPress={postHandler}>
-              Post Data
-            </MainButton>
-          </View>
+        {ItemSeparator}
+        <View style={styles.listItem}>
+          <TouchableNativeFeedback onPress={() => setRegion(1)}>
+            <View style={styles.point}>
+              <Text
+                style={[DefaultStyles.title, {color: 'white', padding: 30}]}>
+                1
+              </Text>
+            </View>
+          </TouchableNativeFeedback>
+          <TouchableNativeFeedback onPress={() => setRegion(2)}>
+            <View style={styles.point}>
+              <Text
+                style={[DefaultStyles.title, {color: 'white', padding: 30}]}>
+                2
+              </Text>
+            </View>
+          </TouchableNativeFeedback>
+          <TouchableNativeFeedback onPress={() => setRegion(3)}>
+            <View style={styles.point}>
+              <Text
+                style={[DefaultStyles.title, {color: 'white', padding: 30}]}>
+                3
+              </Text>
+            </View>
+          </TouchableNativeFeedback>
+          <TouchableNativeFeedback onPress={() => setRegion(4)}>
+            <View style={styles.point}>
+              <Text
+                style={[DefaultStyles.title, {color: 'white', padding: 30}]}>
+                4
+              </Text>
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+        {ItemSeparator}
+        {isActive ? (
+          <MainButton onPress={reset}>Stop Timer</MainButton>
+        ) : (
+          <MainButton onPress={toggle}>Start Timer</MainButton>
         )}
       </View>
     </ScrollView>
@@ -267,7 +256,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+  },
+  point: {
+    height: 80,
+    width: 80,
+    backgroundColor: Colors.accent,
+    justifyContent: 'center',
+  },
+  separator: {
+    height: 25,
+    backgroundColor: '#863bd8',
   },
 });
 
