@@ -73,8 +73,10 @@ const GameOverScreen = props => {
   };
 
   const postHandler = () => {
+    console.log(list);
     const data = toObject(list);
-    fetch('http://192.168.1.106:3000/demo', {
+    console.log(data);
+    fetch('http://192.168.1.103:3000/demo', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

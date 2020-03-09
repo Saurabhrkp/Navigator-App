@@ -81,6 +81,7 @@ const SetupScreen = props => {
         return;
       }
       setList(devices);
+      setRegion(region);
       const deviceIn = element => element.id === device.id;
       const index = devices.findIndex(deviceIn);
       if (index == -1) {
@@ -121,8 +122,7 @@ const SetupScreen = props => {
       return;
     }
     const data = toObject(list);
-    console.log(data);
-    fetch('http://192.168.1.106:3000', {
+    fetch('http://192.168.1.103:3000', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -131,13 +131,12 @@ const SetupScreen = props => {
     })
       .then(response => response.json())
       .then(result => {
-        console.log('Success:', result);
+        console.log('Success');
         ToastAndroid.show('Successfully posted', ToastAndroid.SHORT);
         Vibration.vibrate(100);
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('result:' + error);
       });
   };
 
