@@ -54,19 +54,6 @@ const SetupScreen = props => {
     return () => clearInterval(interval);
   }, [isActive, seconds]);
 
-  useEffect(() => {
-    let interval = null;
-    if (status) {
-      interval = setInterval(() => {
-        postHandler();
-        console.log('Post handler called');
-      }, 5000);
-    } else if (!status) {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [status]);
-
   const startScanHandler = () => {
     let LowLatency = 2;
     let ScanCallbackType = true;
@@ -224,7 +211,18 @@ const SetupScreen = props => {
         </View>
         {ItemSeparator}
         {isActive ? (
-          <MainButton onPress={reset}>Stop Timer</MainButton>
+          <View>
+            <MainButton onPress={reset}>Stop Timer</MainButton>
+            {status ? (
+              <MainButton onPress={postHandler}>Post</MainButton>
+            ) : (
+              <View>
+                <Text style={[DefaultStyles.title, {padding: 10}]}>
+                  Start to post
+                </Text>
+              </View>
+            )}
+          </View>
         ) : (
           <MainButton onPress={toggle}>Start Timer</MainButton>
         )}
