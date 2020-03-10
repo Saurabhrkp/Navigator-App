@@ -52,19 +52,19 @@ const GameOverScreen = props => {
     });
   };
 
-  useEffect(() => {
-    let interval = null;
-    if (status) {
-      interval = setInterval(() => {
-        postHandler();
-        console.log('Post handler called');
-        Tts.speak('Post handler called');
-      }, 5000);
-    } else if (!status) {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [status]);
+  // useEffect(() => {
+  //   let interval = null;
+  //   if (status) {
+  //     interval = setInterval(() => {
+  //       postHandler();
+  //       console.log('Post handler called');
+  //       Tts.speak('Post handler called');
+  //     }, 5000);
+  //   } else if (!status) {
+  //     clearInterval(interval);
+  //   }
+  //   return () => clearInterval(interval);
+  // }, [status]);
 
   const toObject = arr => {
     var rv = {};
@@ -122,7 +122,7 @@ const GameOverScreen = props => {
       )}
       {ItemSeparator}
       <TouchableNativeFeedback
-        onPress={() => console.warn('press')}
+        onPress={postHandler}
         onLongPress={() => console.warn('Long Press')}>
         <View style={[styles.button, {backgroundColor: Colors.accent}]} />
       </TouchableNativeFeedback>
