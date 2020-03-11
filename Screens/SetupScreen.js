@@ -71,12 +71,12 @@ const SetupScreen = props => {
       setRegion(region);
       const deviceIn = element => element.id === device.id;
       const index = devices.findIndex(deviceIn);
-      if (index == -1) {
+      if (index == -1 && device.name !== null) {
         const {id, name, rssi} = device;
         console.log(`New device: ${id}`);
         devices.push({id, name, rssi, region});
         setList(devices);
-      } else {
+      } else if (device.name !== null) {
         devices[index].region = region;
         devices[index].rssi = device.rssi;
         setList(devices);
