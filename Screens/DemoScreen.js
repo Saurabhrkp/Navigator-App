@@ -5,12 +5,10 @@ import {
   Dimensions,
   Vibration,
   ToastAndroid,
-  DeviceEventEmitter,
   TouchableNativeFeedback,
 } from 'react-native';
 import Tts from 'react-native-tts';
 import {BleManager} from 'react-native-ble-plx';
-import BackgroundTimer from 'react-native-background-timer';
 
 import Colors from '../constants/colors';
 
@@ -28,7 +26,6 @@ const GameOverScreen = props => {
 
   const manager = new BleManager();
 
-  BackgroundTimer.start(5000);
   const startScanHandler = () => {
     let LowLatency = 2;
     let ScanOptions = {scanMode: LowLatency};
@@ -55,11 +52,19 @@ const GameOverScreen = props => {
     });
   };
 
-  DeviceEventEmitter.addListener('backgroundTimer', () => {
-    // this will be executed once after 5 seconds
-    postHandler();
-    Tts.speak('Post handler called');
-  });
+  // useEffect(() => {
+  //   let interval = null;
+  //   if (status) {
+  //     interval = setInterval(() => {
+  //       postHandler();
+  //       console.log('Post handler called');
+  //       Tts.speak('Post handler called');
+  //     }, 5000);
+  //   } else if (!status) {
+  //     clearInterval(interval);
+  //   }
+  //   return () => clearInterval(interval);
+  // }, [status]);
 
   const toObject = arr => {
     var rv = {};
@@ -94,7 +99,6 @@ const GameOverScreen = props => {
     console.log('Stopped Scanning');
     ToastAndroid.show('Stopped Scanning', ToastAndroid.SHORT);
     Vibration.vibrate(100);
-    BackgroundTimer.stop();
     Tts.speak('Stopped Scanning');
     setStatus(!status);
   };
