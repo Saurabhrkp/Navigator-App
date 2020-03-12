@@ -19,8 +19,7 @@
     "react-native-safe-area-context": "^0.7.3",
     "react-native-screens": "^2.2.0",
     "react-native-tts": "^3.1.1",
-    "react-navigation": "^4.2.2",
-    "util": "^0.12.2"
+    "react-navigation": "^4.2.2"
   },
   "devDependencies": {
     "@babel/core": "^7.6.2",
