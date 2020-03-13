@@ -42,7 +42,7 @@ const GameOverScreen = props => {
       const index = devices.findIndex(deviceIn);
       if (index == -1) {
         const {id, name, rssi} = device;
-        Tts.speak(`New device: ${name} added`);
+        // Tts.speak(`New device: ${name} added`);
         console.log(`New device: ${id}`);
         devices.push({id, name, rssi});
       } else {
@@ -51,20 +51,6 @@ const GameOverScreen = props => {
       setList(devices);
     });
   };
-
-  // useEffect(() => {
-  //   let interval = null;
-  //   if (status) {
-  //     interval = setInterval(() => {
-  //       postHandler();
-  //       console.log('Post handler called');
-  //       Tts.speak('Post handler called');
-  //     }, 5000);
-  //   } else if (!status) {
-  //     clearInterval(interval);
-  //   }
-  //   return () => clearInterval(interval);
-  // }, [status]);
 
   const toObject = arr => {
     var rv = {};
@@ -76,7 +62,7 @@ const GameOverScreen = props => {
     console.log(list);
     const data = toObject(list);
     console.log(data);
-    fetch('http://192.168.1.100:3000/demo', {
+    fetch('http://192.168.43.50:3000/demo', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +72,7 @@ const GameOverScreen = props => {
       .then(response => response.json())
       .then(result => {
         console.log('Success:', result);
-        Tts.speak(`Success: ${result}`);
+        Tts.speak(`You are at region : ${result}`);
       })
       .catch(error => {
         console.error('Error:', error);
